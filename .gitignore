@@ -1,9 +1,8 @@
 # Gradle
 .gradle/
 build/
-gradle/
-gradlew
-gradlew.bat
+gradlew.bak
+gradlew.old
 
 # Android Studio
 .idea/
