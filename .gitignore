@@ -1,0 +1,50 @@
+# Gradle
+.gradle/
+build/
+gradle/
+gradlew
+gradlew.bat
+
+# Android Studio
+.idea/
+*.iml
+*.iws
+*.ipr
+local.properties
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.apk
+*.aar
+*.ap_
+*.dex
+*.class
+
+# Proguard
+*.pro.map
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+
+# Misc
+*.swp
+*.swo
+*~
+.classpath
+.project
+.settings/
+*.orig
+*.rej
+
+# Generated files
+/captures
+.cxx
