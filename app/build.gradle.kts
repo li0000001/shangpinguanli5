@@ -43,6 +43,13 @@ android {
     }
 }
 
+kapt {
+    javacOptions {
+        option("--add-opens", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED")
+        option("--add-opens", "jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED")
+    }
+}
+
 dependencies {
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
