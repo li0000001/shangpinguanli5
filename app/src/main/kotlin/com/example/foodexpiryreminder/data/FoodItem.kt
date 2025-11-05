@@ -10,5 +10,6 @@ data class FoodItem(
     val id: Int = 0,
     val name: String,
     val expiryTime: Long,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val syncedToCalendar: Boolean = false
 )
