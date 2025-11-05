@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.foodexpiryreminder.alarm.ExpiryAlarmManager
+import com.example.foodexpiryreminder.calendar.CalendarSyncHelper
 import com.example.foodexpiryreminder.data.AppDatabase
 import com.example.foodexpiryreminder.data.FoodItem
 import com.example.foodexpiryreminder.data.FoodRepository
@@ -42,7 +43,15 @@ class MainActivity : AppCompatActivity() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (!isGranted) {
-            showPermissionDeniedDialog()
+            showPermissionDeniedDialog("通知权限被拒绝，应用无法发送过期提醒。请在设置中启用通知权限。")
+        }
+    }
+
+    private val requestCalendarPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+            showPermissionDeniedDialog("日历权限被拒绝，应用无法自动同步到日历。请在设置中启用日历权限。")
         }
     }
 
@@ -56,6 +65,7 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         setupListeners()
         requestNotificationPermission()
+        requestCalendarPermission()
 
         alarmManager = ExpiryAlarmManager(this)
 
@@ -68,7 +78,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupDatabase() {
         val database = AppDatabase.getDatabase(this)
-        val repository = FoodRepository(database.foodItemDao())
+        val calendarSyncHelper = CalendarSyncHelper(this)
+        val repository = FoodRepository(database.foodItemDao(), calendarSyncHelper)
         val factory = FoodViewModelFactory(repository)
         viewModel = ViewModelProvider(this, factory)[FoodViewModel::class.java]
     }
@@ -123,13 +134,20 @@ class MainActivity : AppCompatActivity() {
                         name = foodName,
                         expiryTime = selectedDate
                     )
-                    viewModel.insertFoodItem(newFoodItem)
 
                     lifecycleScope.launch {
-                        val insertedId = AppDatabase.getDatabase(this@MainActivity)
+                        val database = AppDatabase.getDatabase(this@MainActivity)
+                        val calendarSyncHelper = CalendarSyncHelper(this@MainActivity)
+                        val insertedId = database
                             .foodItemDao()
                             .insertFoodItem(newFoodItem)
                         val updatedFoodItem = newFoodItem.copy(id = insertedId.toInt())
+                        
+                        val syncSuccess = calendarSyncHelper.syncFoodItemToCalendar(updatedFoodItem)
+                        if (syncSuccess) {
+                            database.foodItemDao().updateFoodItem(updatedFoodItem.copy(syncedToCalendar = true))
+                        }
+                        
                         alarmManager.scheduleExpiryAlarm(updatedFoodItem)
                     }
                 } else {
@@ -226,10 +244,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showPermissionDeniedDialog() {
+    private fun requestCalendarPermission() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_CALENDAR
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestCalendarPermissionLauncher.launch(Manifest.permission.WRITE_CALENDAR)
+        }
+    }
+
+    private fun showPermissionDeniedDialog(message: String) {
         AlertDialog.Builder(this)
             .setTitle("权限被拒绝")
-            .setMessage("通知权限被拒绝，应用无法发送过期提醒。请在设置中启用通知权限。")
+            .setMessage(message)
             .setPositiveButton("确定", null)
             .create()
             .show()
